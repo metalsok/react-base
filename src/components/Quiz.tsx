@@ -1,15 +1,15 @@
 import { Question } from './Question.tsx';
 import { DUMMY_QUESTIONS } from '../dummy-questions.tsx';
 import { QuizContext } from '../store/quiz-context.tsx';
-import { use, useEffect, useState } from 'react';
+import { use, useCallback } from 'react';
 import { Results } from './Results.tsx';
 import { Answers } from './Answers.tsx';
+import { QuestionTimer } from './QuestionTimer.tsx';
 
-const TIMER = 10000;
+const TIMEOUT = 10000;
 
 export function Quiz({ title }: { title: string }) {
-  const { activeQuestion, addAnswer, answers, resetQuiz } = use(QuizContext);
-  const [progress, setProgress] = useState(TIMER);
+  const { activeQuestion, answers, resetQuiz, addAnswer } = use(QuizContext);
 
   const finished = activeQuestion === DUMMY_QUESTIONS.length - 1;
 
@@ -18,31 +18,13 @@ export function Quiz({ title }: { title: string }) {
   ).length;
   const totalQuestions = DUMMY_QUESTIONS.length - 1;
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prevState) => {
-        if (prevState <= 0 || finished) return 0;
-        return prevState - 10;
-      });
-    }, 10);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [activeQuestion]);
-
-  useEffect(() => {
-    setProgress(TIMER);
-
-    const timeout = setTimeout(() => {
-      if (!finished) addAnswer('');
-    }, TIMER);
-
-    return () => clearTimeout(timeout);
-  }, [activeQuestion]);
-
   function handleTryAgain() {
     resetQuiz();
   }
+
+  const handleTimeout = useCallback(() => {
+    addAnswer('');
+  }, []);
 
   return (
     <>
@@ -55,8 +37,8 @@ export function Quiz({ title }: { title: string }) {
         {!finished ? (
           <>
             <Question question={DUMMY_QUESTIONS[activeQuestion].question}></Question>
-            <progress value={progress} max={TIMER} className="w-full h-2"></progress>
-            <Answers />
+            <QuestionTimer key={activeQuestion} timeout={TIMEOUT} onTimeout={handleTimeout}></QuestionTimer>
+            <Answers answers={DUMMY_QUESTIONS[activeQuestion].options} />
           </>
         ) : (
           <>
