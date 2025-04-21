@@ -13,24 +13,28 @@ export interface Action {
 interface QuizContextType {
   answers: string[];
   activeQuestion: number;
-  nextQuestion: () => void;
+  resetQuiz: () => void;
+  addAnswer: (answer: string) => void;
 }
 
 export const QuizContext = createContext<QuizContextType>({
   answers: [],
   activeQuestion: 0,
-  nextQuestion: () => {},
+  resetQuiz: () => {},
+  addAnswer: () => {},
 });
 
 function quizReducer(state: Quiz, action: Action) {
-  if (action.type === 'NEXT') {
-    console.log(state, action);
-    return { ...state, activeQuestion: state.activeQuestion + 1 };
-  }
   if (action.type === 'ADD') {
     return {
       ...state,
       answers: [...state.answers, action.payload],
+      activeQuestion: state.activeQuestion + 1,
+    };
+  }
+  if (action.type === 'RESET') {
+    return {
+      ...initialState,
     };
   }
   return state;
@@ -44,15 +48,19 @@ const initialState: Quiz = {
 export function QuizContextProvider({ children }: PropsWithChildren) {
   const [quizState, quizStateDispatch] = useReducer(quizReducer, initialState);
 
-  function handleNextQuestion() {
-    console.log('i am called');
-    quizStateDispatch({ type: 'NEXT', payload: null });
+  function handleAnswer(answer: string) {
+    quizStateDispatch({ type: 'ADD', payload: answer });
+  }
+
+  function resetQuiz() {
+    quizStateDispatch({ type: 'RESET', payload: undefined });
   }
 
   const ctxValue = {
     answers: quizState.answers,
     activeQuestion: quizState.activeQuestion,
-    nextQuestion: handleNextQuestion,
+    addAnswer: handleAnswer,
+    resetQuiz: resetQuiz,
   };
   return <QuizContext.Provider value={ctxValue}>{children}</QuizContext.Provider>;
 }
